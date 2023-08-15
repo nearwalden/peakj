@@ -42,21 +42,21 @@ end
 
 
 # Gates foundation population data
-BMGF = {'path': 'gatesfoundation/',
-        'basepath': DATA_BASEPATH,
-        'data': 
-            {'files': 
-                {'pop_data': 'IHME_POP_2017_2100_POP_BOTH_SEX_ALL_AGE_Y2020M05D01.csv'
-                },
-            'collections':
-                {'global_pop': {
-                    'basepath': 'IHME_POP_2017_2100_GLOBAL_{}.csv',
-                    'vals': ['SLOWER', 'REFERENCE', 'FASTER', 'SDG']
-                    },
-                'country_pop': {
-                    'basepath': 'IHME_POP_2017_2100_COUNTRY_{}.csv',
-                    'vals': ['SLOWER', 'REFERENCE', 'FASTER', 'SDG']
-                    }
-                }
-            }
-}
+# BMGF = {'path': 'gatesfoundation/',
+#         'basepath': DATA_BASEPATH,
+#         'data': 
+#             {'files': 
+#                 {'pop_data': 'IHME_POP_2017_2100_POP_BOTH_SEX_ALL_AGE_Y2020M05D01.csv'
+#                 },
+#             'collections':
+#                 {'global_pop': {
+#                     'basepath': 'IHME_POP_2017_2100_GLOBAL_{}.csv',
+#                     'vals': ['SLOWER', 'REFERENCE', 'FASTER', 'SDG']
+#                     },
+#                 'country_pop': {
+#                     'basepath': 'IHME_POP_2017_2100_COUNTRY_{}.csv',
+#                     'vals': ['SLOWER', 'REFERENCE', 'FASTER', 'SDG']
+#                     }
+#                 }
+#             }
+# }
