@@ -35,16 +35,16 @@ witt = Dict(
     ),
     "collections" => Dict(
         "all_pop" => Dict(
-            "basepath" => ["ssp", "epop_wide.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "basepath" => "ssp%sepop_wide.csv",
+            "vals" => 1:6
         ),
          "global_pop" => Dict(
-            "basepath" => ["ssp", "epop_wide.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "basepath" => "ssp%sepop_wide.csv",
+            "vals" => 1:6
         ),
         "country_pop" => Dict(
-            "basepath" => ["ssp", "epop_country.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "basepath" => "ssp%sepop_country.csv",
+            "vals" => 1:6
         )
     )
 )
@@ -55,15 +55,15 @@ un2019 = Dict(
     "basepath" => data_basepath,
     "collections" => Dict(
         "all_pop" => Dict(
-            "basepath" => ["WPP2019_POP_F01_1_TOTAL_POPULATION_BOTH_SEXES_", ".csv"],
+            "basepath" => "WPP2019_POP_F01_1_TOTAL_POPULATION_BOTH_SEXES_%s.csv",
             "vals" => ["high", "medium", "low"]
         ),
          "global_pop" => Dict(
-            "basepath" => ["WPP2019_POP_GLOBAL_", ".csv"],
+            "basepath" => "WPP2019_POP_GLOBAL_%s.csv",
             "vals" => ["high", "medium", "low"]
         ),
         "country_pop" => Dict(
-            "basepath" => ["WPP2019_POP_COUNTRY_", ".csv"],
+            "basepath" => "WPP2019_POP_COUNTRY_%s.csv",
             "vals" => ["high", "medium", "low"]
         )
     )
@@ -76,15 +76,15 @@ un2022 = Dict(
     "basepath" => data_basepath,
     "collections" => Dict(
         "all_pop" => Dict(
-            "basepath" => ["WPP2022_GEN_F01_DEMOGRAPHIC_INDICATORS_REV1_POP_", ".csv"],
+            "basepath" => "WPP2022_GEN_F01_DEMOGRAPHIC_INDICATORS_REV1_POP_{}.csv",
             "vals" => ["high", "medium", "low"]
         ),
          "global_pop" => Dict(
-            "basepath" => ["WPP2022_POP_GLOBAL_", ".csv"],
+            "basepath" => "WPP2022_POP_GLOBAL_%s.csv",
             "vals" => ["high", "medium", "low"]
         ),
         "country_pop" => Dict(
-            "basepath" => ["WPP2022_POP_COUNTRY_", ".csv"],
+            "basepath" => "WPP2022_POP_COUNTRY_%s.csv",
             "vals" => ["high", "medium", "low"]
         )
     )
@@ -114,12 +114,12 @@ function getfilepath(dataset, name)
 end
 
 # get collection file path
-function getcollfilepath(dataset, coll, val)
+function getcollfilepath(dataset, coll, vals)
     ds = datasets[dataset]
     datasetpath = ds["basepath"] * ds["path"]
-    basefilepath = ds["collections"][coll]["basepath"]
-    filepath = basefilepath[1] * val * basefilepath[2]
-    return(datasetpath * filepath)
+    basefilepath = ds["data"]["collections"][coll]["basepath"]
+#     filepath = base_filepath.format(vals)
+#     return datasetpath + filepath
 end
 
 # get possible values for a collection
