@@ -55,63 +55,58 @@ function un2019regionnames()
     return subset(df, :Type => t -> t .== "Region").Region
 end
 
+# locations for un2022
+function un2022locations()
+    df = DataFrame(CSV.File(getcollfilepath("un_population_2022", "all_pop", "high")))
+    dfg = groupby(df, :Region)
+    outdf = combine(dfg, first)
+    return outdf   
+end
 
-# def un2019_subregion_names():
-#     df = un2019_locations()
-#     return df[df.Type == 'Subregion']['Region'].to_list()
+# un2022 country names
+function un2022countrynames()
+    df = un2022locations()
+    countries = subset(df, :Type => t -> t .== "Country/Area")
+    return unique(countries.Region)
+end
 
-
-# def un2022_locations():
-#     df = p.read_csv(files.get_coll_file_path('un_population_2022', 'all_pop', 'high'))
-#     dfg = df.groupby('Region')
-#     outdf = p.DataFrame()
-#     outdf = dfg.first()
-#     outdf = outdf.reset_index()
-#     return outdf   #  outdf[outdf['Type'] == 'Country/Area'].copy()
-
-
-# def un2022_country_names():
-#     df = un2022_locations()
-#     return df[df.Type == 'Country/Area']['Region'].to_list()
-
-
-# def un2022_region_names():
-#     df = un2022_locations()
-#     return df[df.Type == 'Region']['Region'].to_list()
-
-
-# def un2022_subregion_names():
-#     df = un2022_locations()
-#     return df[df.Type == 'Subregion']['Region'].to_list()
-
-
-# def compare_names(names, dataset, un2019):
-#     not1 = []
-#     un2019_list = un2019['Region'].to_list()
-#     for item in names:
-#         if item in un2019_list:
-#             both.append(item)
-#         else:
-#             only1.append(item)
-#     for item in un_list:
-#         if item not in names:
-#             not1.append(item)
-#     out = {dataset: only1,
-#             'un': not1,
-#             'both': both
-#         }
-#     return out
+function comparenames(names, dataset, un)
+    not1 = []
+    only1 = []
+    both = []
+    unlist = un.Region
+    for item in names
+        if item in unlist
+            push!(both, item)
+        else
+            push!(only1, item)
+        end
+    end
+    for item in unlist
+        if item ∉ names   # not in
+            push!(not1, item)
+        end
+    end
+    out = Dict(dataset => only1,
+            "un" => not1,
+            "both" => both
+    )
+    return out
+end
 
 
-# def compare_all_names(b, w, u):
-#     bu = compare_names(b, 'bmgf', u)
-#     wu = compare_names(w['name'].to_list(), 'witt', u)
-#     print("BU = " + str(len(bu['both'])) + ", WU = " + str(len(wu['both'])))
-#     all_len = 0
-#     for item in bu['both']:
-#         if item in wu['both']:
-#             all_len += 1
-#     print("All = " + str(all_len))
+function compareallnames(b, w, u)
+    bu = comparenames(b, "bmgf", u)
+    wu = comparenames(w.name, "witt", u)
+    print("BU = " * repr(ncount(bu.both)) * ", WU = " * repr(ncount(wu.both)))
+    alllen = 0
+    for item in bu.both
+        if item in wu.both
+            alllen += 1
+        end
+    end
+    print("All = " + repr(alllen))
+end
 
 
 # def compare_numbers(witt, un):
