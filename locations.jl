@@ -98,36 +98,41 @@ end
 function compareallnames(b, w, u)
     bu = comparenames(b, "bmgf", u)
     wu = comparenames(w.name, "witt", u)
-    print("BU = " * repr(ncount(bu.both)) * ", WU = " * repr(ncount(wu.both)))
+    print("BU = " * repr(length(bu["both"])) * ", WU = " * repr(length(wu["both"])))
     alllen = 0
-    for item in bu.both
-        if item in wu.both
+    for item in bu["both"]
+        if item in wu["both"]
             alllen += 1
         end
     end
-    print("All = " + repr(alllen))
+    print(", All = " * repr(alllen))
 end
 
 
-# def compare_numbers(witt, un):
-#     not1 = []
-#     only1 = []
-#     both = []
-#     un_list = un['Country code'].to_list()
-#     witt_list = witt['code'].to_list()
-#     for item in witt_list:
-#         if item in un_list:
-#             both.append(item)
-#         else:
-#             only1.append(item)
-#     for item in un['Country code']:
-#         if item not in witt['code']:
-#             not1.append(item)
-#     out = {'witt': only1,
-#             'un': not1,
-#             'both': both
-#     }
-#     return out
+function compare_numbers(witt, un)
+    not1 = []
+    only1 = []
+    both = []
+    un_list = un.Country_code
+    witt_list = witt_code
+    for item in witt_list
+        if item in un_list
+            both.append(item)
+        else
+            only1.append(item)
+        end
+    end
+    for item in un['Country code']
+        if item not in witt['code']
+            not1.append(item)
+        end
+    end
+    out = {'witt': only1,
+            'un': not1,
+            'both': both
+    }
+    return out
+end
 
 
 # # returns a list of common countries
