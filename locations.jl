@@ -49,12 +49,6 @@ function un2019countrynames()
     return unique(countries.Region)
 end
 
-# all region names
-function un2019regionnames()
-    df = un2019_locations()
-    return subset(df, :Type => t -> t .== "Region").Region
-end
-
 # locations for un2022
 function un2022locations()
     df = DataFrame(CSV.File(getcollfilepath("un_population_2022", "all_pop", "high")))
@@ -98,7 +92,7 @@ end
 function compareallnames(b, w, u)
     bu = comparenames(b, "bmgf", u)
     wu = comparenames(w.name, "witt", u)
-    print("BU = " * repr(length(bu["both"])) * ", WU = " * repr(length(wu["both"])))
+    print("BU = " * repr(length(bu["both"])) * ", WU = " * repr(length(wu["both"]))) 
     alllen = 0
     for item in bu["both"]
         if item in wu["both"]
@@ -109,71 +103,55 @@ function compareallnames(b, w, u)
 end
 
 
-function compare_numbers(witt, un)
+function comparenumbers(witt, un)
     not1 = []
     only1 = []
     both = []
-    un_list = un.Country_code
-    witt_list = witt_code
+    un_list = un."Country code"
+    witt_list = witt.code
     for item in witt_list
         if item in un_list
-            both.append(item)
+            push!(both, item)
         else
-            only1.append(item)
+            push!(only1, item)
         end
     end
-    for item in un['Country code']
-        if item not in witt['code']
-            not1.append(item)
+    for item in un."Country code"
+        if item ∉ witt.code
+            push!(not1, item)
         end
     end
-    out = {'witt': only1,
-            'un': not1,
-            'both': both
-    }
+    out = Dict("witt" => only1,
+            "un" => not1,
+            "both" => both
+    )
     return out
 end
 
 
-# # returns a list of common countries
-# def countries():
-#     uc2019 = un2019_country_names()
-#     uc2022 = un2022_country_names()
-#     b = bmgf_location_names()
-#     w = witt_locations()['name'].to_list()
-#     common = list(set(uc2019).intersection(set(uc2022), set(b), set(w)))
-#     return common
+# returns a list of common countries
+function countries()
+    uc2019 = un2019countrynames()
+    uc2022 = un2022countrynames()
+    b = bmgflocationnames()
+    w = wittlocations().name
+    common = intersect(uc2019, uc2022, b, w)
+    return common
+end
     
-# # returns a list of common countries
-# def un_countries():
-#     uc2019 = un2019_country_names()
-#     uc2022 = un2022_country_names()
-#     common = list(set(uc2019).intersection(set(uc2022)))
-#     return common
+# returns a list of common countries
+function uncountries()
+    uc2019 = un2019countrynames()
+    uc2022 = un2022countrynames()
+    common = intersect(uc2019, uc2022)
+    return common
+end
 
 
-
-# # get UN isono from country name
-# def country_code(country):
-#     df = p.read_csv(files.get_file_path('witt_population', 'recode'))
-#     df = df.set_index('name')
-#     return df.loc[country]['code']
-
-
-# # retunrs a list of common regions (none!)
-# def regions():
-#     uc = un_region_names()
-#     b = bmgf_location_names()
-#     w = witt_locations()['name'].to_list()
-#     common = set(uc).intersection(set(b), set(w))
-#     return list(common)
-
-
-# # returns a list of common subregions (only a couple!)
-# def subregions():
-#     uc = un_subregion_names()
-#     b = bmgf_location_names()
-#     w = witt_locations()['name'].to_list()
-#     common = set(uc).intersection(set(b), set(w))
-#     return list(common)
+# get UN isono from country name
+function countrycode(country)
+    df = DataFrame(CSV.File(getfilepath("witt_population", "recode")))
+    row = df[findfirst(==(country), df.name), :]
+    return row.code
+end
 
