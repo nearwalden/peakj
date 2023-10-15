@@ -1,5 +1,7 @@
 # This has the info about all of the key files for `peakj`
 
+using DataFrames
+
 # Note: I don't like how this is coming out, need a database or something
 
 # basepath of the data directories
@@ -14,11 +16,11 @@ bmgf = Dict(
     ),
     "collections" => Dict(
         "global_pop" => Dict(
-            "basepath" => "IHME_POP_2017_2100_GLOBAL_%s.csv",
+            "basepath" => ["IHME_POP_2017_2100_GLOBAL_", ".csv"],
             "vals" => ["SLOWER", "REFERENCE", "FASTER", "SDG"]
         ),
         "country_pop" => Dict(
-            "basepath" => "IHME_POP_2017_2100_COUNTRY_%s.csv",
+            "basepath" => ["IHME_POP_2017_2100_COUNTRY_", ".csv"],
             "vals" => ["SLOWER", "REFERENCE", "FASTER", "SDG"]
         )
     )
@@ -128,3 +130,15 @@ function getcollvalues(dataset, coll)
     return(ds["data"]["collections"][coll]["vals"])
 end
 
+# similar to above but return DataFrames
+function getdf(dataset, name)
+    path = getfilepath(dataset, name)
+    return(DataFrame(CSV.File(path)))
+end
+
+# same for collections
+# similar to above but return DataFrames
+function getcolldf(dataset, coll, val)
+    path = getcollfilepath(dataset, coll, val)
+    return(DataFrame(CSV.File(path)))
+end

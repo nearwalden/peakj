@@ -1,104 +1,111 @@
-# # Make clean files
+# Make clean files
 
-# import files
-# import locations
-# import pandas as p
-# import numpy as np
+using DataFrames
+using CSV
 
-# # All
+include("locations.jl")
+include("files.jl")
 
-# GLOBAL_COLS = ['scenario', 'year', 'population']
+# All
+
+GLOBALCOLS = ["scenario", "year", "population"]
 
 # # BMFG data cleaning
 
-# BMGF_SCENARIOS = {
-#     'SLOWER': -1,
-#     'REFERENCE': 0,
-#     'FASTER': 1,
-#     'SDG': 2
-# }
+BMGFSCENARIOS = Dict(
+    "SLOWER" => -1,
+    "REFERENCE" => 0,
+    "FASTER" => 1,
+    "SDG" => 2
+)
 
-# BMGF_MAP = {
-#     'scenario': 'scenario_id',
-#     'year_id': 'year',
-#     'val': 'population',
-#     'location_name': 'location_name'
-# }
-
-
-# def bmgf_global():
-#     ds = 'bmgf_population'
-#     orig = p.read_csv(files.get_file_path(ds, 'pop_data'))
-#     # get global
-#     origg = orig[orig['location_id'] == 1]
-#     # start with 2020
-#     origg = origg[origg.year_id > 2019]
-#     # get right columns
-#     norm = mapdf(origg, BMGF_MAP)
-#     # do scenarios in order
-#     for scenario in BMGF_SCENARIOS.keys():
-#         out_path = files.get_coll_file_path(ds, 'global_pop', scenario)
-#         # pick out scenario
-#         norms = norm[norm['scenario_id'] == BMGF_SCENARIOS[scenario]].copy()
-#         norms['scenario'] = scenario
-#         norms['population'] = norms['population'].astype(int)
-#         norms.to_csv(out_path)
-#         print("Wrote " + str(len(norms)) + " records for " + scenario)
-#     return True
+BMGFMAP = Dict(
+    "scenario" => "scenario_id",
+    "year_id" => "year",
+    "val" => "population",
+    "location_name" => "location_name"
+)
 
 
-# def bmgf_countries():
-#     ds = 'bmgf_population'
-#     countries = locations.countries()
-#     orig = p.read_csv(files.get_file_path(ds, 'pop_data'))
-#     # start with 2020
-#     orig = orig[orig.year_id > 2019]
-#     # get right columns
-#     norm = mapdf(orig, BMGF_MAP)
-#     # do scenarios in order
-#     for scenario in BMGF_SCENARIOS.keys():
-#         out_path = files.get_coll_file_path(ds, 'country_pop', scenario)
-#         # pick out scenario
-#         norms = norm[norm['scenario_id'] == BMGF_SCENARIOS[scenario]].copy()
-#         norms = norms.set_index('year')
-#         outdf = p.DataFrame()
-#         for country in countries:
-#             normc = norms[norms['location_name'] == country]
-#             outdf[country] = normc['population'].astype(int)
-#         outdf = outdf.reset_index()
-#         outdf.to_csv(out_path)
-#         print("Wrote " + str(len(outdf)) + " records for " + scenario)
-#     return True
+function bmgfglobal()
+    ds = "bmgf_population"
+    orig = getdf(ds, "pop_data")
+    # get global
+    origg = orig[orig.location_id .== 1, :]
+    # start with 2020
+    origg = origg[origg.year_id .> 2019, :]
+    # get right columns
+    norm = rename(origg, BMGFMAP)
+    # do scenarios in order
+    for scenario in keys(BMGFSCENARIOS)
+        outpath = getcollfilepath(ds, "global_pop", scenario)
+        # pick out scenario
+        norms = norm[norm.scenario_id .== BMGFSCENARIOS[scenario], :]
+        norms.scenario .= scenario
+        # norms.population = norm.population
+        CSV.write(outpath, norms)
+        print("Wrote " * string(nrow(norms)) * " records for " * scenario * "\n")
+    end
+    return(true)
+end
 
 
-# # UN data cleaning
+function bmgfcountries()
+    ds = "bmgf_population"
+    commoncountries = countries()
+    orig = getdf(ds, "pop_data")
+    # start with 2020
+    orig = orig[orig.year_id .> 2019, :]
+    # get right columns
+    norm = rename(orig, BMGFMAP)
+    # do scenarios in order
+    for scenario in keys(BMGFSCENARIOS)
+        outpath = getcollfilepath(ds, "country_pop", scenario)
+        # pick out scenario
+        norms = norm[norm.scenario_id .== BMGFSCENARIOS[scenario], :]
+        # norms = norms.set_index('year')
+        outdf = DataFrame()
+        for country in commoncountries
+            normc = norms[norms.location_name .== country, :]
+            for row in eachrow(normc)
+                push!(outdf, row)
+            end
+        end
+        CSV.write(outpath, outdf)
+        print("Wrote " * string(nrow(outdf)) * " records for " * scenario * "\n")
+    end
+    return(true)
+end
 
-# UN_SCENARIOS = ['high', 'medium', 'low']
 
-# UN2019_DROPS = ['Variant', 'Notes', 'Country code', 'Type', 'Parent code']
+# UN data cleaning
 
-# UN2022_DROPS = ['Variant', 'Notes', 'Location code', 'Type']
+UNSCENARIOS = ["high", "medium", "low"]
+
+UN2019DROPS = ["Variant", "Notes", "Country code", "Type", "Parent code"]
+
+UN2022DROPS = ["Variant", "Notes", "Location code", "Type"]
 
 
-# # clean up the 2019 version
-# def un2019_global():
-#     ds = 'un_population_2019'
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'global_pop', scenario)
-#         # get global
-#         orig = orig.drop(UN2019_DROPS, 1)
-#         world = orig[orig.Region == 'WORLD']
-#         new = world.drop('Region', 1).T
-#         new = new.reset_index()
-#         out = p.DataFrame()
-#         out['population'] = new[0].map(lambda x: int(x.replace(' ','')) * 1000)
-#         out['year'] = new['index']
-#         out['scenario'] = scenario
-#         out.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " + scenario)
-#     return True
+# clean up the 2019 version
+function un2019global()
+    ds = "un_population_2019"
+    scenarios = getcollvals(ds, "all_pop")
+    for scenario in scenarios:
+        orig = getcolldf(ds, "all_pop", scenario))
+        outpath = getcollfilepath(ds, "global_pop", scenario)
+        # get global
+        orig = orig.drop(UN2019DROPS, 1)
+        world = orig[orig.Region == "WORLD"]
+        new = world.drop('Region', 1).T
+        new = new.reset_index()
+        out = DataFrame()
+        out.population = new[0].map(lambda x: int(x.replace(' ','')) * 1000)
+        out.year = new['index']
+        out.scenario = scenario
+        out.to_csv(out_path)
+        print("Wrote " + str(len(out)) + " records for " + scenario)
+    return True
 
 # def un2019_countries():
 #     ds = 'un_population_2019'
@@ -225,14 +232,3 @@
 #         outdf.to_csv(out_path)
 #         print("Wrote " + str(len(out)) + " records for " +str(scenario))
 #     return True
-
-
-# # utils
-
-
-# # return a new df with columns mapped
-# def mapdf(df, map):
-#     outdf = p.DataFrame()
-#     for key in map.keys():
-#         outdf[map[key]] = df[key]
-#     return outdf

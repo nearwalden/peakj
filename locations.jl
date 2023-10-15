@@ -15,14 +15,14 @@ worldnames = Dict(
 
 # vector of unique locaiotn names
 function bmgflocationnames()
-    df = DataFrame(CSV.File(getfilepath("bmgf_population", "pop_data")))
+    df = getdf("bmgf_population", "pop_data")
     return(unique(df.location_name))
 end
 
 # all locations in a DataFrame
 function wittlocations()
-    df = DataFrame(CSV.File(getfilepath("witt_population", "recode")))
-    datadf = DataFrame(CSV.File(getcollfilepath("witt_population", "all_pop", "1")))
+    df = getdf("witt_population", "recode")
+    datadf = getcolldf("witt_population", "all_pop", "1")
     dfl = subset(df, :dim => d -> d .== "isono")
     outdf = DataFrame(name=String[], code=Int[])
     for row in eachrow(dfl)
@@ -36,7 +36,7 @@ end
 
 # all locations in a DataFrame
 function un2019locations()
-    df = DataFrame(CSV.File(getcollfilepath("un_population_2019", "all_pop", "high")))
+    df = getcolldf("un_population_2019", "all_pop", "high")
     dfg = groupby(df, :Region)
     outdf = combine(dfg, first)
     return outdf   
@@ -51,7 +51,7 @@ end
 
 # locations for un2022
 function un2022locations()
-    df = DataFrame(CSV.File(getcollfilepath("un_population_2022", "all_pop", "high")))
+    df = getcolldf("un_population_2022", "all_pop", "high")
     dfg = groupby(df, :Region)
     outdf = combine(dfg, first)
     return outdf   
@@ -150,7 +150,7 @@ end
 
 # get UN isono from country name
 function countrycode(country)
-    df = DataFrame(CSV.File(getfilepath("witt_population", "recode")))
+    df = getdf("witt_population", "recode")
     row = df[findfirst(==(country), df.name), :]
     return row.code
 end
