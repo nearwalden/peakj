@@ -127,7 +127,7 @@ end
 # get possible values for a collection
 function getcollvalues(dataset, coll)
     ds = datasets[dataset]
-    return(ds["data"]["collections"][coll]["vals"])
+    return(ds["collections"][coll]["vals"])
 end
 
 # similar to above but return DataFrames

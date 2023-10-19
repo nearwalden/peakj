@@ -49,7 +49,7 @@ function bmgfglobal()
     return(true)
 end
 
-
+# cleaned up version of BMGF, can have it drop some columns
 function bmgfcountries()
     ds = "bmgf_population"
     commoncountries = countries()
@@ -86,93 +86,105 @@ UN2019DROPS = ["Variant", "Notes", "Country code", "Type", "Parent code"]
 
 UN2022DROPS = ["Variant", "Notes", "Location code", "Type"]
 
+# function to cleanup population data for UN
+function unpopcleanup(val)
+    newstr = replace(val, " " => "")
+    return(parse.(Int, newstr) * 1000)
+end
 
 # clean up the 2019 version
 function un2019global()
     ds = "un_population_2019"
-    scenarios = getcollvals(ds, "all_pop")
-    for scenario in scenarios:
-        orig = getcolldf(ds, "all_pop", scenario))
+    scenarios = getcollvalues(ds, "all_pop")
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
         outpath = getcollfilepath(ds, "global_pop", scenario)
         # get global
-        orig = orig.drop(UN2019DROPS, 1)
-        world = orig[orig.Region == "WORLD"]
-        new = world.drop('Region', 1).T
-        new = new.reset_index()
-        out = DataFrame()
-        out.population = new[0].map(lambda x: int(x.replace(' ','')) * 1000)
-        out.year = new['index']
-        out.scenario = scenario
+        select!(orig, Not(UN2019DROPS))
+        world = orig[orig.Region .== "WORLD", :]
+        # select!(world, Not(:Region))
+        new = permutedims(world, :Region, :year)
+        rename!(new, :WORLD => :population)
+        transform!(new, :population => ByRow(x -> unpopcleanup(x)) => :population)
+        new.scenario .= scenario
+        CSV.write(outpath, new)
+        print("Wrote " * string(nrow(new)) * " records for " * scenario * "\n")
+    end
+    return(true)
+end
+
+function un2019countries()
+    ds = "un_population_2019"
+    commoncountries = countries()    
+    scenarios = getcollvalues(ds, "all_pop")
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
+        outpath = getcollfilepath(ds, "country_pop", scenario)
+        # get global
+        select!(orig, Not(UN2019DROPS))
+        origcountries = filter(:Region => c -> c in commoncountries, orig)
+        new = permutedims(origcountries, :Region, :year)
+        for country in commoncountries
+            transform!(new, country => ByRow(x -> unpopcleanup(x)) => country)
+        end
+        new.scenario .= scenario
+        CSV.write(outpath, new)
+        print("Wrote " * string(nrow(new)) * " records for " * scenario * "\n")
+    end
+    return(true)
+end
+
+# clean up the 2022 version
+
+
+function un2022global()
+    ds = "un_population_2022"
+    scenarios = getcollvalues(ds, "all_pop")
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
+        outpath = getcollfilepath(ds, "global_pop", scenario)
+        # get global
+        new = orig[orig.Region .== "WORLD", :]
+        transform!(new, :population => ByRow(x -> unpopcleanup(x)) => :population)
+        new.sceenario .= scenario
+        CSV.write(outpath, new)
+        print("Wrote " * string(nrow(new)) * " records for " * scenario * "\n")
+    end
+    return(true)
+end
+
+
+function un2022countries()
+    ds = "un_population_2022"
+    commoncountries = countries()    
+    scenarios = files.getcollvalues(ds, "all_pop")
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
+        out_path = getcollfilepath(ds, "country_pop", scenario)
+        origcountries = filter(:Region => c -> c in commoncountries, orig)
+        new = permutedims(origcountries, :Region, :year)
+        for country in commoncountries
+            transform!(new, country => ByRow(x -> unpopcleanup(x)) => country)
+        end
+        new.scenario .= scenario
+        CSV.write(outpath, new)
+        print("Wrote " * string(nrow(new)) * " records for " * scenario * "\n")
+
+        for country in countries:
+            countrydf = orig[orig.Region == country].copy()
+            out[country] = countrydf['population'].map(lambda x: int(x.replace(' ','')) * 1000).values
+            if first_country:
+                out['year'] = orig['year']
+            end
+            first_country = False
+            out = out.copy()
+        end
+        out['scenario'] = scenario
         out.to_csv(out_path)
         print("Wrote " + str(len(out)) + " records for " + scenario)
-    return True
-
-# def un2019_countries():
-#     ds = 'un_population_2019'
-#     countries = locations.countries()    
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'country_pop', scenario)
-#         # get global
-#         orig = orig.drop(UN2019_DROPS, axis=1)
-#         out = p.DataFrame()
-#         first_country = True
-#         for country in countries:
-#             countrydf = orig[orig.Region == country].copy()
-#             new = countrydf.drop('Region', axis=1).T
-#             country_code = new.columns[0]
-#             new = new.reset_index()
-#             out[country] = new[country_code].map(lambda x: int(x.replace(' ','')) * 1000)
-#             if first_country:
-#                 out['year'] = new['index']
-#             first_country = False
-#             out = out.copy()
-#         out['scenario'] = scenario
-#         out.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " + scenario)
-#     return True
-
-# # clean up the 2022 version
-
-
-# def un2022_global():
-#     ds = 'un_population_2022'
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'global_pop', scenario)
-#         # get global
-#         world = orig[orig.Region == 'WORLD']
-#         out = p.DataFrame()
-#         out['population'] = world['population'].map(lambda x: int(x.replace(' ','')) * 1000)
-#         out['year'] = world['year']
-#         out['scenario'] = scenario
-#         out.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " + scenario)
-#     return True
-
-
-# def un2022_countries():
-#     ds = 'un_population_2022'
-#     countries = locations.countries()    
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'country_pop', scenario)
-#         out = p.DataFrame()
-#         first_country = True
-#         for country in countries:
-#             countrydf = orig[orig.Region == country].copy()
-#             out[country] = countrydf['population'].map(lambda x: int(x.replace(' ','')) * 1000).values
-#             if first_country:
-#                 out['year'] = orig['year']
-#             first_country = False
-#             out = out.copy()
-#         out['scenario'] = scenario
-#         out.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " + scenario)
-#     return True
+    end
+    return(true)
+end
 
 # # Witt data cleaning
 
