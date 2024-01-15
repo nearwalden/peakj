@@ -2,6 +2,7 @@
 
 using DataFrames
 using CSV
+using Interpolations
 
 include("locations.jl")
 include("files.jl")
@@ -88,6 +89,7 @@ UN2022DROPS = ["Variant", "Notes", "Location code", "Type"]
 
 # function to cleanup population data for UN
 function unpopcleanup(val)
+    # print(val * "\n")
     newstr = replace(val, " " => "")
     return(parse.(Int, newstr) * 1000)
 end
@@ -157,90 +159,87 @@ end
 function un2022countries()
     ds = "un_population_2022"
     commoncountries = countries()    
-    scenarios = files.getcollvalues(ds, "all_pop")
+    scenarios = getcollvalues(ds, "all_pop")
     for scenario in scenarios
         orig = getcolldf(ds, "all_pop", scenario)
-        out_path = getcollfilepath(ds, "country_pop", scenario)
-        origcountries = filter(:Region => c -> c in commoncountries, orig)
-        new = permutedims(origcountries, :Region, :year)
+        outpath = getcollfilepath(ds, "country_pop", scenario)
+        # setup new dataframe
+        new = DataFrame()
+        new.year = orig[orig.Region .== "WORLD", :].year
+        new.scenario .= scenario       
         for country in commoncountries
-            transform!(new, country => ByRow(x -> unpopcleanup(x)) => country)
+            countrydf = orig[orig.Region .== country, :]
+            # fix all of the population values
+            transform!(countrydf, :population => ByRow(x -> unpopcleanup(x)) => :population)
+            new[:, country] = countrydf.population
         end
-        new.scenario .= scenario
         CSV.write(outpath, new)
         print("Wrote " * string(nrow(new)) * " records for " * scenario * "\n")
-
-        for country in countries:
-            countrydf = orig[orig.Region == country].copy()
-            out[country] = countrydf['population'].map(lambda x: int(x.replace(' ','')) * 1000).values
-            if first_country:
-                out['year'] = orig['year']
-            end
-            first_country = False
-            out = out.copy()
-        end
-        out['scenario'] = scenario
-        out.to_csv(out_path)
-        print("Wrote " + str(len(out)) + " records for " + scenario)
     end
     return(true)
 end
 
+
 # # Witt data cleaning
 
-# WITT_DROPS = ['Variant', 'Notes', 'Country code', 'Type', 'Parent code']
+WITTDROPS = ["Variant", "Notes", "Country code", "Type", "Parent code"]
 
+# This currently won't run because I lost the origina source file....
+function wittglobal()
+    ds = "witt_population"
+    scenarios = getcollvalues(ds, "all_pop")
+    agedrops = []
+    # create list of ages
+    for i in range(1, 21)
+        push!(agedrops, "ageno_" * string(i))
+    end
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
+        outpath = getcollfilepath(ds, "global_pop", scenario)
+        # get global
+        select!(orig, Not(agedrops))
+        world = orig[(orig.eduno .== 0) .& (orig.sexno .== 0) .& (orig.isono .== 900), :]
+        interp = linear_interpolation(world.year, world.ageno_0)
+        out = DataFrame(year=Int[], scenario=Int[], population=Int[])
+        for year in range(2020, 2100)
+            pop = interp(year) * 1000
+            push!(out, [year, parse(Int, scenario), convert(Int, round(pop))])
+        end
+        CSV.write(outpath, out)
+        print("Wrote " * string(nrow(out)) * " records for " * string(scenario) * "\n")
+    end
+    return(true)
+end
 
-# def witt_global():
-#     ds = 'witt_population'
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     age_drops = []
-#     for i in range(1, 22):
-#         age_drops.append('ageno_' + str(i))
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'global_pop', scenario)
-#         # get global
-#         orig = orig.drop(age_drops, 1)
-#         world = orig[(orig.eduno == 0) & (orig.sexno == 0) & (orig.isono == 900)]
-#         fit = np.polyfit(world.year, world.ageno_0, 2)
-#         out = []
-#         for year in range(2020, 2101):
-#             pop = (fit[0] * np.square(year) + fit[1] * year + fit[2]) * 1000
-#             out.append({
-#                 'year': year,
-#                 'scenario': scenario,
-#                 'population': pop})
-#         outdf = p.DataFrame(out)
-#         outdf.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " +str(scenario))
-#     return True
-
-
-# def witt_countries():
-#     ds = 'witt_population'
-#     countries = locations.countries()
-#     scenarios = files.get_coll_vals(ds, 'all_pop')
-#     age_drops = []
-#     for i in range(1, 22):
-#         age_drops.append('ageno_' + str(i))
-#     for scenario in scenarios:
-#         orig = p.read_csv(files.get_coll_file_path(ds, 'all_pop', scenario))
-#         out_path = files.get_coll_file_path(ds, 'country_pop', scenario)
-#         # get global
-#         orig = orig.drop(age_drops, 1)
-#         outdf = p.DataFrame()
-#         outdf['year'] = np.arange(2020, 2101, 1)
-#         # print (outdf)
-#         for country in countries:
-#             code = locations.country_code(country)
-#             country_pop = orig[(orig.eduno == 0) & (orig.sexno == 0) & (orig.isono == code)]
-#             fit = np.polyfit(country_pop.year, country_pop.ageno_0, 2)
-#             out = []
-#             for year in range(2020, 2101):
-#                 pop = (fit[0] * np.square(year) + fit[1] * year + fit[2]) * 1000
-#                 out.append(pop)
-#             outdf[country] = out
-#         outdf.to_csv(out_path)
-#         print("Wrote " + str(len(out)) + " records for " +str(scenario))
-#     return True
+# this won't run because I don't have the original source file on my laptop
+function witt_countries()
+    ds = "witt_population"
+    countries = countries()
+    scenarios = getcollvalues(ds, "all_pop")
+    agedrops = []
+    for i in range(1, 21)
+        push!(agedrops, "ageno_" * string(i))
+    end
+    for scenario in scenarios
+        orig = getcolldf(ds, "all_pop", scenario)
+        outpath = getcollfilepath(ds, "country_pop", scenario)
+        # get global
+        select!(orig, agedrops)
+        outdf = DataFrame()
+        outdf.year = 2020:2100
+        # print (outdf)
+        for country in countries
+            code = countrycode(country)
+            countrypop = orig[(orig.eduno .== 0) .& (orig.sexno .== 0) .& (orig.isono .== code)]
+            interp = linear_interpolation(countrypop.year, countrypop.ageno_0)
+            for year in range(2020, 2100)
+                pop = interp(year) * 1000
+                push!(out, pop)
+            end
+            outdf.country = out
+        end
+        CVS.write(outpath, outdf)
+        print("Wrote " * string(nrows(out)) * " records for " + string(scenario) * "\n")
+    end
+    return(true)
+end

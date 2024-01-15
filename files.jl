@@ -38,15 +38,15 @@ witt = Dict(
     "collections" => Dict(
         "all_pop" => Dict(
             "basepath" => ["ssp", "epop_wide.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "vals" => ["1", "2", "3", "4", "5"]
         ),
          "global_pop" => Dict(
-            "basepath" => ["ssp", "epop_wide.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "basepath" => ["ssp", "epop_global.csv"],
+            "vals" => ["1", "2", "3", "4", "5"]
         ),
         "country_pop" => Dict(
             "basepath" => ["ssp", "epop_country.csv"],
-            "vals" => ["1", "2", "3", "4", "5", "6"]
+            "vals" => ["1", "2", "3", "4", "5"]
         )
     )
 )
